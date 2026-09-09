@@ -915,6 +915,16 @@ renderDays();
 renderNav();
 scrollToToday(true);
 
+// 每次打开页面，按"该日的预测"自动加载所有 day 的天气
+// - 命中 2h 缓存的 day → renderWxChip 直接复用，零请求
+// - miss 的 day → fetch Open-Meteo daily forecast
+// - 14 个 day 并发，HTTP/2 复用一个连接，每个 ~250B 响应，总流量约 1KB
+// - 用户不再需要点日历才看到预报
+// - 保留 calendar nav / FAB 的点击 loadWeatherForDate() 作为幂等兜底（缓存命中即 no-op）
+document.querySelectorAll('.day-weather[data-wx]').forEach(el => {
+  loadWeatherForDate(el.dataset.wx);
+});
+
 // 平滑滚动处理：点击日历上的日期
 document.getElementById('dateNav').addEventListener('click', (e) => {
   // 先处理"展开全部三周"按钮：临时展开全程，回到自动折叠模式(一滚即收起当周)
