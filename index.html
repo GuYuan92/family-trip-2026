@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="jrHpHuW03SXrWCfFMge47W">
+<head data-page-node-id="8MxOJbMRzzQQ8E95W7nFCq">
+<meta charset="UTF-8" data-page-node-id="3UbYvr991HUq002KLJNCtc">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" data-page-node-id="D58GUbJVFsZMe6XWFsGrFt">
+<meta name="theme-color" content="#f7f7f8" data-page-node-id="dIsBsCTMuMT014XSAK8jzx">
+<title>2026 中秋·国庆家庭行程</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1c1d20;
+    --text-soft: #6b7280;
+    --text-faint: #9ca3af;
+    --border: #ececef;
+    --border-soft: #f1f1f3;
+    --gray: #6b7280;
+    --gray-bg: #f3f4f6;
+    --orange: #ea580c;
+    --orange-bg: #fff7ed;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --amap: #1677ff;
+    --amap-bg: #e8f1ff;
+    --dianping: #ff6633;
+    --dianping-bg: #fff1ea;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 96px;
+  }
+
+  /* ===== Header ===== */
+  header.head {
+    padding: 8px 4px 18px;
+  }
+  h1 {
+    font-size: 26px;
+    line-height: 1.35;
+    margin: 0 0 6px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+  .sub {
+    color: var(--text-soft);
+    margin: 0;
+    font-size: 14px;
+  }
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-soft);
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .dot.gray { background: var(--gray); }
+  .dot.orange { background: var(--orange); }
+  .dot.red { background: var(--red); }
+
+  /* ===== Date Nav (sticky calendar) ===== */
+  .date-nav-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(245, 245, 247, 0.94);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    margin: 0 -16px 20px;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-weekdays,
+  .cal-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-weekdays { margin-bottom: 6px; }
+  .cal-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    font-weight: 500;
+    letter-spacing: -0.2px;
+  }
+  .cal-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  /* 折叠态：只显示当前所在周，其余行收起 */
+  .date-nav.collapsed .cal-row { display: none; }
+  .date-nav.collapsed .cal-row.show { display: grid; }
+  /* 始终可见的"展开全部三周"按钮：任何滚动位置都可一键展开，
+     浅底 + 深色加粗字 + 细边框，既让老人看得清、点得准，又不会像深色实心那样压住整个日历 */
+  .cal-toggle {
+    display: block;
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px 0;
+    background: #eef2f7;
+    color: var(--text);
+    border: 1px solid #d7dee8;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .12s ease, background .15s ease;
+  }
+  .cal-toggle:active { transform: scale(0.98); background: #e3e9f1; }
+  .cal-toggle .ico { font-size: 11px; margin-right: 3px; color: var(--text-soft); }
+  .cal-cell {
+    position: relative;
+    min-height: 50px;
+    padding: 2px 1px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    transition: transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .cal-cell:active { transform: scale(0.95); }
+  .cal-cell .dnum { font-size: 15px; font-weight: 600; line-height: 1.2; }
+  .cal-cell .dmark {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+  }
+  /* 第 2 行是日期类型说明，比"出发/返程"稍淡 */
+  .cal-cell .dmark.sub { font-weight: 500; opacity: 0.72; }
+  .cal-cell .mflag {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    font-size: 9px;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+  /* 行程内的日子：浅底 + 彩色描边 + 同色文字 */
+  .cal-cell.gray   { background: var(--gray-bg);   border-color: #d6d8dc; color: var(--gray); }
+  .cal-cell.orange { background: var(--orange-bg); border-color: #fdba74; color: var(--orange); }
+  .cal-cell.red    { background: var(--red-bg);    border-color: #fca5a5; color: var(--red); }
+  /* 今天：深色实心 */
+  .cal-cell.today {
+    background: var(--text);
+    border-color: var(--text);
+    color: #fff;
+  }
+  .cal-cell.today .mflag { color: rgba(255,255,255,0.6); }
+  /* 当前浏览到的那天：外圈 */
+  .cal-cell.active { box-shadow: 0 0 0 2px rgba(28,29,32,0.18); }
+  /* 行程外：淡到几乎不可见、不可点 */
+  .cal-cell.off {
+    background: transparent;
+    border-color: transparent;
+    color: #d4d6db;
+    pointer-events: none;
+  }
+
+  /* ===== Day Card ===== */
+  .day {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+    overflow: hidden;
+    scroll-margin-top: 196px;
+  }
+  .day-header {
+    padding: 14px 18px;
+    color: #fff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .day-header .main {
+    font-size: 17px;
+    letter-spacing: 0.3px;
+  }
+  .day-header .week {
+    font-size: 13px;
+    opacity: 0.85;
+    font-weight: 400;
+  }
+  .day-header .tag {
+    margin-left: auto;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.22);
+    font-weight: 500;
+  }
+  .day.gray .day-header { background: var(--gray); }
+  .day.orange .day-header { background: var(--orange); }
+  .day.red .day-header { background: var(--red); }
+
+  .day-remind {
+    margin: 0;
+    padding: 8px 18px;
+    background: var(--gray-bg);
+    color: var(--text-soft);
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .day-remind::before {
+    content: '⏰';
+    font-size: 14px;
+  }
+
+  .day-body {
+    padding: 14px 18px 18px;
+  }
+
+  /* ===== Schedule items ===== */
+  .item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-soft);
+    align-items: flex-start;
+  }
+  .item:last-child { border-bottom: none; padding-bottom: 2px; }
+  .item:first-child { padding-top: 2px; }
+  .time {
+    flex-shrink: 0;
+    width: 60px;
+    padding-top: 2px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .content {
+    flex: 1;
+    min-width: 0;
+  }
+  .content .title {
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .note {
+    color: var(--text-soft);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .poi {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    max-width: 100%;
+  }
+  .poi .nm {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+  }
+  .poi .arr { font-size: 12px; opacity: 0.7; }
+  .poi.amap {
+    background: var(--amap-bg);
+    color: var(--amap);
+  }
+  .poi.dianping {
+    background: var(--dianping-bg);
+    color: var(--dianping);
+  }
+  .poi:active { transform: scale(0.98); }
+
+  /* ===== Alts ===== */
+  .alts {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .alts-title {
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .alt-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .alt {
+    padding: 6px 12px;
+    background: var(--gray-bg);
+    border-radius: 999px;
+    font-size: 13px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid transparent;
+  }
+  .alt.dianping { background: var(--dianping-bg); color: var(--dianping); }
+  .alt.amap { background: var(--amap-bg); color: var(--amap); }
+  .alt:active { transform: scale(0.97); }
+
+  /* ===== Empty-day state ===== */
+  .empty {
+    padding: 18px 0 6px;
+    color: var(--text-soft);
+    font-size: 15px;
+    text-align: center;
+  }
+  .empty .em {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    margin-top: 28px;
+    padding: 16px;
+    line-height: 1.6;
+  }
+
+  /* ===== "Jump to today" floating button ===== */
+  .fab {
+    position: fixed;
+    right: 16px;
+    bottom: 24px;
+    z-index: 30;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    display: none;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .fab.show { display: inline-flex; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22%;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(28, 29, 32, 0.92);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity .25s ease, transform .25s ease;
+    pointer-events: none;
+    max-width: 86%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== Dianping copy chip tweak ===== */
+  .poi.dianping.dp-copy .arr,
+  .alt.dianping.dp-copy {
+    /* 复制按钮点击反馈用：复制符号右侧淡一些 */
+  }
+  .poi.dianping.dp-copy::after,
+  .alt.dianping.dp-copy::after { content: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 17px; }
+    h1 { font-size: 30px; }
+    .app { padding: 36px 24px 96px; }
+  }
+</style>
+</head>
+<body data-page-node-id="aMIEzhwED11ZdWE5B99os4">
+  <div class="app" data-page-node-id="OwwgcFvJyM9B0YUU9FqolG">
+    <header class="head" data-page-node-id="QPEOvdzKfmxU9UghVhwFMH">
+      <h1 data-page-node-id="p5bsBtUn2FNfwpj2B4Xb0G">2026 中秋·国庆家庭行程</h1>
+      <p class="sub" data-page-node-id="FsCHFtn7zegPtdaBWs2ad6">9月24日 — 10月7日 · 一家人的秋日行程表</p>
+      <div class="legend" data-page-node-id="EJHurW7olRr0wkp2nLH7xE">
+        <span class="legend-item" data-page-node-id="FJaNaanKVPULkWtIfM7wQa"><span class="dot gray" data-page-node-id="H67WdHZr1DXSXEG2qaFRrS"></span>出发 / 请假工作日</span>
+        <span class="legend-item" data-page-node-id="TvOsR0t8ulZbmI61noI7FF"><span class="dot orange" data-page-node-id="37wBA4r4w72KnZXHTapjQO"></span>中秋假期</span>
+        <span class="legend-item" data-page-node-id="X931y1sRAZkSgkCF7dWQ1r"><span class="dot red" data-page-node-id="sYFf78ZPdAAiMYeKv4BEsR"></span>国庆假期</span>
+      </div>
+    </header>
+
+    <div class="date-nav-wrap" data-page-node-id="CGrqNzvX60Ne747CScOyUm">
+      <nav class="date-nav" id="dateNav" aria-label="日期导航" data-page-node-id="tyQ7uCFoyABk73hAff5WPU"></nav>
+    </div>
+
+    <main id="days" data-page-node-id="7xZet03jxY9MavaAlrwtns"></main>
+
+    <footer data-page-node-id="Qhe0yBrt4nH0l1WwR1r6rZ">
+      <div data-page-node-id="vCDFbJdlnMZT60eQsEWohA">愿这一趟路途平安，团圆有趣。</div>
+      <div style="margin-top:6px;" data-page-node-id="x8C05XXqKuvcmCHdzp7pCQ">点击「地点按钮」可直接跳转大众点评 / 高德地图查看详情。</div>
+    </footer>
+  </div>
+
+  <button class="fab" id="fab" data-page-node-id="nSulAWGvMI6EVDaNFn01PF">回到今天</button>
+
+<script>
+/* ===================== Data ===================== */
+const tripStart = '2026-09-24';
+const tripEnd   = '2026-10-07';
+
+/* 顶部日历导航：三行（三周），按周一 ~ 周日排列。
+   key   = 对应 days 里的日期；key 为 null 表示不在行程内（淡灰、不可点）
+   mflag = 右上角月份标记，只标每月在日历里的第一格
+   mark  = 日期数字下方第 1 行标注（出发 / 返程，可空）
+   sub   = 日期数字下方第 2 行标注（当日类型：请假 / 中秋 / 国庆 …） */
+const calendar = [
+  [ { d:'21', key:null,         mflag:'9月',  mark:'',    sub:''      },
+    { d:'22', key:null,         mflag:'',     mark:'',    sub:''      },
+    { d:'23', key:null,         mflag:'',     mark:'',    sub:''      },
+    { d:'24', key:'2026-09-24', mflag:'',     mark:'出发', sub:'请假'   },
+    { d:'25', key:'2026-09-25', mflag:'',     mark:'',    sub:'中秋节' },
+    { d:'26', key:'2026-09-26', mflag:'',     mark:'',    sub:'中秋'   },
+    { d:'27', key:'2026-09-27', mflag:'',     mark:'',    sub:'中秋'   } ],
+  [ { d:'28', key:'2026-09-28', mflag:'',     mark:'',    sub:'请假'   },
+    { d:'29', key:'2026-09-29', mflag:'',     mark:'',    sub:'请假'   },
+    { d:'30', key:'2026-09-30', mflag:'',     mark:'',    sub:'自由'   },
+    { d:'1',  key:'2026-10-01', mflag:'10月', mark:'',    sub:'国庆节' },
+    { d:'2',  key:'2026-10-02', mflag:'',     mark:'',    sub:'国庆'   },
+    { d:'3',  key:'2026-10-03', mflag:'',     mark:'返程', sub:'国庆'   },
+    { d:'4',  key:'2026-10-04', mflag:'',     mark:'',    sub:'国庆'   } ],
+  [ { d:'5',  key:'2026-10-05', mflag:'',     mark:'',    sub:'国庆'   },
+    { d:'6',  key:'2026-10-06', mflag:'',     mark:'',    sub:'国庆'   },
+    { d:'7',  key:'2026-10-07', mflag:'',     mark:'',    sub:'国庆'   },
+    { d:'8',  key:null,         mflag:'',     mark:'',    sub:''      },
+    { d:'9',  key:null,         mflag:'',     mark:'',    sub:''      },
+    { d:'10', key:null,         mflag:'',     mark:'',    sub:''      },
+    { d:'11', key:null,         mflag:'',     mark:'',    sub:''      } ]
+];
+
+/* 类型: gray = 出发/请假工作日, orange = 中秋假期, red = 国庆假期 */
+const days = [
+  {
+    date: '2026-09-24', short: '9月24日', week: '周四', type: 'gray', tag: '出发日',
+    events: [
+      { time: '12:30', text: '家中集合出发' },
+      { time: '',     text: '导航目的地：晚餐', poi: { name: '杨家牛肉汤(淮建路店)', url: 'https://m.dianping.com/shopinfo/G2ucfzXPhJriULQS?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=210&cityid=113&isoversea=0', kind: 'dianping' } },
+      { time: '18:30', text: '预计到达（车程约 5 小时 35 分）', note: '出发前记得检查车辆、加满油' },
+      { time: '21:00', text: '回到入住酒店休息', poi: { name: '寿州国际酒店 · 四星级', url: 'https://surl.amap.com/WNPas24b6b', kind: 'amap' } }
+    ],
+    alts: [
+      { name: '天天特色牛肉汤(总店)', url: 'https://m.dianping.com/shopinfo/kaNzEyqqEvPIOZeI?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=112&cityid=113&isoversea=0', kind: 'dianping' },
+      { name: '寿州杨帆快餐(明珠花园店)', url: 'https://m.dianping.com/shopinfo/H3MtdDgAUefLlVvC?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=112&cityid=963&isoversea=0', kind: 'dianping' }
+    ]
+  },
+  {
+    date: '2026-09-25', short: '9月25日', week: '周五', type: 'orange', tag: '中秋节',
+    events: [
+      { time: '08:00', text: '起床，楼下集合吃早餐', note: '别忘吃千张卷油条，记得遛狗 🐶', poi: { name: '赵家祖传豆腐脑', url: 'https://m.dianping.com/shopinfo/l5tLYeIPYPqMHJ0j?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=217&cityid=963&isoversea=0', kind: 'dianping' } },
+      { time: '09:30', text: '出发，给奶奶买詹记月饼' },
+      { time: '10:00', text: '回家看望奶奶' },
+      { time: '11:30', text: '带奶奶到城中吃午饭', poi: { name: '聚红盛(古城店)', url: 'https://m.dianping.com/shopinfo/l6cravw0InYTrnGy?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=26482&cityid=963&isoversea=0', kind: 'dianping' } },
+      { time: '14:00', text: '视情况，带奶奶到寿县古城逛一逛' },
+      { time: '18:00', text: '回酒店换古装，带孩子逛寿县古城' },
+      { time: '21:00', text: '回酒店休息' }
+    ],
+    alts: [
+      { name: '清真传承小吃馆', url: 'https://m.dianping.com/shopinfo/H6FwfewkCroMOiHQ?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=210&cityid=963&isoversea=0', kind: 'dianping' }
+    ]
+  },
+  {
+    date: '2026-09-26', short: '9月26日', week: '周六', type: 'orange', tag: '中秋假期',
+    events: [
+      { time: '08:00', text: '起床，楼下集合吃早餐' },
+      { time: '09:00', text: '出发去二姨家拜访（待定）', poi: { name: '天玺国际城', url: 'https://surl.amap.com/YNfR9wb6c5', kind: 'amap' } },
+      { time: '11:00', text: '出发去大姨家 / 娘家', poi: { name: '祝台孜', url: 'https://surl.amap.com/ZbkKZc1xgNU', kind: 'amap' }, note: '别忘买礼品 🎁' }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-09-27', short: '9月27日', week: '周日', type: 'orange', tag: '中秋假期',
+    events: [
+      { time: '', text: '出发去颍上', note: '交通工具待定' }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-09-28', short: '9月28日', week: '周一', type: 'gray', tag: '请假工作日',
+    events: [
+      { time: '', text: '自由安排', empty: true }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-09-29', short: '9月29日', week: '周二', type: 'gray', tag: '请假工作日',
+    events: [
+      { time: '', text: '返程回凤台南', note: '建议高铁返程，提前订票' }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-09-30', short: '9月30日', week: '周三', type: 'gray', tag: '自由安排',
+    events: [
+      { time: '', text: '自由安排', empty: true }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-01', short: '10月1日', week: '周四', type: 'red', tag: '国庆节',
+    events: [
+      { time: '08:00', text: '起床出发去合肥' },
+      { time: '',     text: '导航目的地：午饭', poi: { name: '777菜馆(淮河西路店)', url: 'https://m.dianping.com/shopinfo/HaehiZ74OVaFvVjV?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=26482&cityid=110&isoversea=0', kind: 'dianping' } },
+      { time: '11:00', text: '预计到达（车程约 2 小时）' },
+      { time: '13:00', text: '回酒店办理入住', poi: { name: '合肥栢景假日酒店', url: 'https://surl.amap.com/10JqyroG7lD', kind: 'amap' } },
+      { time: '13:00–16:30', text: '酒店休息' },
+      { time: '17:00', text: '出发益民街三巨头吃小吃（建议打车）', note: '华强鸡蛋饼 / 吕霞凉皮 / 丁姐鸭血粉丝', poiList: [
+        { name: '华强鸡蛋饼(益民街店)', url: 'https://m.dianping.com/shopinfo/k3XotB0ssSQtZSDL?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=10&cityid=110&isoversea=0', kind: 'dianping' },
+        { name: '吕霞凉皮(益民街店)',    url: 'https://m.dianping.com/shopinfo/jAWYxtBlJ8is2185?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=112&cityid=110&isoversea=0', kind: 'dianping' },
+        { name: '丁姐鸭血粉丝(舒城路店)', url: 'https://m.dianping.com/shopinfo/jYJB7UJmqXb6maSq?msource=Appshare2021&utm_source=shop_share&shoptype=10&shopcategoryid=112&cityid=110&isoversea=0', kind: 'dianping' }
+      ]},
+      { time: '19:00', text: '步行街逛街', note: '建议步行，约 15 分钟' },
+      { time: '21:00', text: '返程回酒店，遛狗休息 🐶' }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-02', short: '10月2日', week: '周五', type: 'red', tag: '国庆假期',
+    events: [
+      { time: '08:00', text: '起床吃贾不假包子' },
+      { time: '',     text: '去阿姨家拜访', note: '黎阳嘉苑 · 别忘买礼品 🎁', poi: { name: '黎阳嘉苑', url: 'https://surl.amap.com/12Dyxkug4Fk', kind: 'amap' } },
+      { time: '13:00', text: '出发去合柴 1972 逛吃', poi: { name: '合柴 1972', url: 'http://dpurl.cn/T122prbz', kind: 'dianping' } },
+      { time: '',     text: '其他自由安排', note: '记得吃拉面和炒饭 🍜' }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-03', short: '10月3日', week: '周六', type: 'red', tag: '国庆假期',
+    events: [
+      { time: '', text: '返程回家', poi: { name: '德圣·博奥城', url: 'https://surl.amap.com/12Dyxkug4Fk', kind: 'amap' } }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-04', short: '10月4日', week: '周日', type: 'red', tag: '国庆假期',
+    events: [
+      { time: '', text: '自由安排', empty: true }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-05', short: '10月5日', week: '周一', type: 'red', tag: '国庆假期',
+    events: [
+      { time: '', text: '自由安排', empty: true }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-06', short: '10月6日', week: '周二', type: 'red', tag: '国庆假期',
+    events: [
+      { time: '', text: '自由安排', empty: true }
+    ],
+    alts: []
+  },
+  {
+    date: '2026-10-07', short: '10月7日', week: '周三', type: 'red', tag: '国庆假期最后一天',
+    events: [
+      { time: '', text: '假期最后一日，收尾收心，迎接新的阶段！', empty: true }
+    ],
+    alts: []
+  }
+];
+
+/* ===================== Render ===================== */
+function kindLabel(k){ return k === 'amap' ? '高德地图' : '大众点评'; }
+
+function poiChip(p){
+  const safeName = String(p.name).replace(/"/g, '&quot;');
+  const safeUrl  = String(p.url).replace(/"/g, '&quot;');
+  if (p.kind === 'amap') {
+    return `<a class="poi amap" href="${p.url}" rel="noopener" aria-label="在${kindLabel(p.kind)}打开${p.name}">
+              <span>${kindLabel(p.kind)}</span>
+              <span class="nm">${p.name}</span>
+              <span class="arr">↗</span>
+            </a>`;
+  }
+  // 大众点评 m 站在微信内置浏览器里会被其登录层拦截（错误码 10005），
+// 自动跳转尝试也无法绕过，因此回退为可靠的"复制链接 + 提示在 App 内粘贴"方案。
+return `<a class="poi dianping dp-copy" href="javascript:void(0)" data-url="${safeUrl}" data-name="${safeName}" role="button" aria-label="复制大众点评链接 ${p.name}">
+          <span>${kindLabel(p.kind)}</span>
+          <span class="nm">${p.name}</span>
+          <span class="arr">⧉</span>
+        </a>`;
+}
+
+function renderDays(){
+  const root = document.getElementById('days');
+  root.innerHTML = days.map(d => {
+    const itemsHtml = d.events.map(ev => {
+      if (ev.empty) {
+        return `<div class="empty"><div class="em">🍃</div>${ev.text}</div>`;
+      }
+      const poiHtml = ev.poi ? poiChip(ev.poi) : '';
+      const poiListHtml = (ev.poiList && ev.poiList.length)
+        ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${ev.poiList.map(poiChip).join('')}</div>`
+        : '';
+      const noteHtml = ev.note ? `<div class="note">${ev.note}</div>` : '';
+      return `
+        <div class="item">
+          ${ev.time ? `<div class="time">${ev.time}</div>` : `<div class="time"></div>`}
+          <div class="content">
+            <div class="title">${ev.text}</div>
+            ${noteHtml}
+            ${poiHtml}
+            ${poiListHtml}
+          </div>
+        </div>`;
+    }).join('');
+
+    const altsHtml = (d.alts && d.alts.length)
+      ? `<div class="alts">
+          <div class="alts-title">备选</div>
+          <div class="alt-list">
+            ${d.alts.map(a => {
+              if (a.kind === 'amap') {
+                return `<a class="alt amap" href="${a.url}" rel="noopener">${a.name} · ${kindLabel(a.kind)} ↗</a>`;
+              }
+              const safeName = String(a.name).replace(/"/g, '&quot;');
+              const safeUrl  = String(a.url).replace(/"/g, '&quot;');
+              return `<a class="alt dianping dp-copy" href="javascript:void(0)" data-url="${safeUrl}" data-name="${safeName}" role="button">${a.name} · ${kindLabel(a.kind)} ⧉</a>`;
+            }).join('')}
+          </div>
+        </div>` : '';
+
+    return `
+      <section class="day ${d.type}" id="day-${d.date}" data-date="${d.date}">
+        <div class="day-header">
+          <div class="main">${d.short}</div>
+          <div class="week">${d.week}</div>
+          <div class="tag">${d.tag}</div>
+        </div>
+        <div class="day-remind">记得检查带电话手表，记得遛狗 🐶</div>
+        <div class="day-body">${itemsHtml}${altsHtml}</div>
+      </section>`;
+  }).join('');
+}
+
+function renderNav(){
+  const nav = document.getElementById('dateNav');
+  const weekdays = ['周一','周二','周三','周四','周五','周六','周日'];
+  let html = '<div class="cal-weekdays">'
+           + weekdays.map(w => `<span>${w}</span>`).join('')
+           + '</div><div class="cal-grid">';
+  calendar.forEach((row, wi) => {
+    html += `<div class="cal-row" data-week="${wi}">`;
+    row.forEach(c => {
+      const mflag = c.mflag ? `<span class="mflag">${c.mflag}</span>` : '';
+      if (!c.key) {
+        // 行程外的日子：淡灰、不可点，只占位保持日历对齐
+        html += `<div class="cal-cell off" aria-hidden="true">${mflag}<span class="dnum">${c.d}</span></div>`;
+        return;
+      }
+      const day = days.find(x => x.date === c.key);
+      const type = day ? day.type : 'gray';
+      // 数字下方最多两行：出发/返程 → 当日类型
+      const marks = [];
+      if (c.mark) marks.push(`<span class="dmark">${c.mark}</span>`);
+      if (c.sub)  marks.push(`<span class="dmark sub">${c.sub}</span>`);
+      html += `<a class="cal-cell ${type}" href="#day-${c.key}" data-date="${c.key}">${mflag}<span class="dnum">${c.d}</span>${marks.join('')}</a>`;
+    });
+    html += '</div>';
+  });
+  html += '</div><button class="cal-toggle" id="calToggle" type="button"><span class="ico">▼</span>展开全部三周</button>';
+  nav.innerHTML = html;
+  updateCalToggleText();
+}
+
+/* ---- 日历折叠：跳转后只保留目标日期所在的那一周 ---- */
+/* 返回日期在 calendar 里的行索引，找不到返回 -1 */
+function weekIndexOf(key){
+  for (let i = 0; i < calendar.length; i++) {
+    if (calendar[i].some(c => c.key === key)) return i;
+  }
+  return -1;
+}
+function showWeekOnly(weekIndex){
+  const nav = document.getElementById('dateNav');
+  if (!nav || weekIndex < 0) return;
+  nav.classList.add('collapsed');
+  nav.querySelectorAll('.cal-row').forEach(r => {
+    r.classList.toggle('show', r.dataset.week === String(weekIndex));
+  });
+  updateCalToggleText();
+}
+function expandAllWeeks(){
+  const nav = document.getElementById('dateNav');
+  if (!nav) return;
+  nav.classList.remove('collapsed');
+  updateCalToggleText();
+}
+function updateCalToggleText(){
+  const btn = document.getElementById('calToggle');
+  if (!btn) return;
+  const nav = document.getElementById('dateNav');
+  const collapsed = !!(nav && nav.classList.contains('collapsed'));
+  btn.innerHTML = collapsed
+    ? '<span class="ico">▼</span>展开全部三周'
+    : '<span class="ico">▲</span>收起';
+}
+
+/* ===================== "Today" positioning ===================== */
+function todayKey(){
+  const t = new Date();
+  const y = t.getFullYear();
+  const m = String(t.getMonth()+1).padStart(2,'0');
+  const d = String(t.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function inTrip(key){
+  return key >= tripStart && key <= tripEnd;
+}
+
+/* sticky 日历的实际高度（每次实时读，避免写死后对不齐）*/
+function navOffset(){
+  const el = document.querySelector('.date-nav-wrap');
+  return (el ? el.offsetHeight : 196) + 8;   // +8 让卡片标题栏和日历之间留一点空隙
+}
+/* 把某一天滚到"日历正下方"，确保是从卡片顶部开始展示 */
+function scrollDayIntoView(key, behavior){
+  const target = document.getElementById('day-' + key);
+  if (!target) return;
+  const top = target.getBoundingClientRect().top + window.pageYOffset - navOffset();
+  window.scrollTo({ top: Math.max(top, 0), behavior: behavior || 'smooth' });
+}
+
+function scrollToToday(init){
+  const key = todayKey();
+  const target = document.getElementById('day-' + key);
+  const fab = document.getElementById('fab');
+
+  // 当前日期落在行程内 → 滚动；之外或无对应 section → 不滚动
+  if (target && inTrip(key)) {
+    if (init) {
+      // 初次加载：滚动到对应日程（iOS 微信需等渲染完成）
+      requestAnimationFrame(() => {
+        scrollDayIntoView(key, 'auto');
+      });
+    }
+  }
+
+  // 高亮日历上的今天
+  document.querySelectorAll('.cal-cell').forEach(p => {
+    p.classList.toggle('today', p.dataset.date === key && inTrip(key));
+  });
+
+  if (init) {
+    fab.classList.remove('show');
+  }
+}
+
+function scrollToDate(key){
+  scrollDayIntoView(key, 'smooth');
+}
+
+/* ===================== FAB ===================== */
+let initScrolled = false;
+let manualExpandWeek = -1;   // 手动展开保持态：-1=自动折叠模式；>=0=保持三周(参考周)
+let manualExpandTimer = 0;   // calToggle 短暂保持态超时句柄，到期复位回自动折叠
+let currentActiveKey = null; // scroll 监听里最近算出的"正在看的那天"，供点击处理读取
+window.addEventListener('scroll', () => {
+  if (!initScrolled) {
+    // 第一次用户滚动后允许显示 FAB
+    initScrolled = (window.scrollY > 80);
+  }
+  const key = todayKey();
+  const fab = document.getElementById('fab');
+  if (initScrolled && inTrip(key)) fab.classList.add('show');
+  else fab.classList.remove('show');
+
+  // 滚动时做三件事：① 控制 FAB 显隐；② 自动折叠日历到当前周(详见下方)；③ 高亮当前正在看的那天。
+  // 折叠只收成"当周一行"、不动布局，跨 9/24↔9/25(同周) 边界高度不变，因此不会抖。
+  // 取"顶部已滚过日历下沿"的最后一天，作为当前正在看的那天。
+  const stickyH = navOffset();
+  let activeKey = null;
+  for (const d of days) {
+    const el = document.getElementById('day-' + d.date);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    if (r.top <= stickyH + 8) activeKey = d.date;
+    else break;
+  }
+  currentActiveKey = activeKey;   // 缓存给点击处理读取，避免点击 calToggle 后被 scroll 监听立即折叠
+
+  // 滚动自动折叠：进入任意行程日，导航收成"当周一行"省屏。
+  // 关键修复：不再对 9/24(出发日) 做"自动全展开"特例——9/24 与 9/25 同属第一周，
+  // 旧逻辑 keepAll 在 9/24(展开三行)/9/25(折叠一行) 间反复跳，触发高度三行↔一行
+  // 切换的抖动。现在统一折叠当周，跨 24/25 边界 week 都=0，导航高度不变，不抖。
+  // 手动展开保持态(manualExpandWeek>=0)：仅当用户滚动到"不同周"时才收起，
+  // 同周内浏览保持三周；一旦跨周自动折叠，立即复位回自动模式，避免"折叠后不再响应"。
+  if (activeKey) {
+    const nav = document.getElementById('dateNav');
+    if (nav) {
+      const week = weekIndexOf(activeKey);
+      if (manualExpandWeek >= 0) {
+        if (manualExpandWeek !== week) { manualExpandWeek = -1; showWeekOnly(week); }
+      } else {
+        const isCollapsed = nav.classList.contains('collapsed');
+        const curRow = nav.querySelector('.cal-row.show');
+        const curWeek = curRow ? curRow.dataset.week : null;
+        // 仅在"展开态需折叠"或"已折叠但所在周变化"时才动 DOM，避免无谓重排
+        if (!isCollapsed || curWeek !== String(week)) showWeekOnly(week);
+      }
+    }
+  }
+
+  if (activeKey) {
+    document.querySelectorAll('.cal-cell').forEach(p => p.classList.remove('active'));
+    const ap = document.querySelector(`.cal-cell[data-date="${activeKey}"]`);
+    if (ap) ap.classList.add('active');
+  }
+}, { passive: true });
+
+document.getElementById('fab').addEventListener('click', () => {
+  const key = todayKey();
+  scrollToDate(key);
+});
+
+/* ===================== Init ===================== */
+renderDays();
+renderNav();
+scrollToToday(true);
+
+// 平滑滚动处理：点击日历上的日期
+document.getElementById('dateNav').addEventListener('click', (e) => {
+  // 先处理"展开全部三周"按钮：临时展开全程，回到自动折叠模式(一滚即收起当周)
+  if (e.target.closest('#calToggle')) {
+    e.preventDefault();
+    // 按钮可切换：折叠态点 → 展开三周；展开态点 → 收成当周一行（合并）
+    const nav = document.getElementById('dateNav');
+    const collapsed = !!(nav && nav.classList.contains('collapsed'));
+    clearTimeout(manualExpandTimer);
+    if (collapsed) {
+      // 折叠 → 展开：进入短暂"保持态"防 iOS 微信点击 button 触发的微小 scroll
+      // 立即折回（修了 16:32 bug），约 300ms 后复位回自动折叠模式
+      const wk = (currentActiveKey && weekIndexOf(currentActiveKey) >= 0) ? weekIndexOf(currentActiveKey) : -1;
+      manualExpandWeek = wk;
+      expandAllWeeks();
+      manualExpandTimer = setTimeout(() => { manualExpandWeek = -1; }, 300);
+    } else {
+      // 展开 → 折叠：收成当前正在看的天所在的那一行
+      const wk = (currentActiveKey && weekIndexOf(currentActiveKey) >= 0) ? weekIndexOf(currentActiveKey) : 0;
+      manualExpandWeek = -1;
+      showWeekOnly(wk);
+    }
+    return;
+  }
+  const a = e.target.closest('.cal-cell');
+  if (!a) return;
+  e.preventDefault();
+  const key = a.dataset.date;
+  // 点击任意日期都展开全程三周（点击=展开），由滚动自动折叠省屏：
+  // 进入"保持态"(参考周=该日期所在周)，同周内浏览保持三周，跨周滚动时自动收起当周。
+  // 这样第一日与其余日期行为一致，不再有"其他日点击展开无效"的差异。
+  manualExpandWeek = weekIndexOf(key);
+  expandAllWeeks();
+  // 先改日历视图再滚动，这样 navOffset() 读到的是展开后的新高度
+  scrollToDate(key);
+});
+
+/* ===================== Dianping copy helper ===================== */
+// 大众点评 m 站 m.dianping.com 在微信内置浏览器里会被其登录层拦截（错误码 10005），
+// 之前尝试过的"自动跳转（Universal Link / location.href）"方案仍然会触发同一报错。
+// 这里回退为最稳定的"复制 + 提示"方案，让家人手动到大众点评 App 内粘贴 / 搜店名。
+function showToast(msg, dur){
+  let t = document.getElementById('wbToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'wbToast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tmo);
+  t._tmo = setTimeout(() => t.classList.remove('show'), dur || 2400);
+}
+function copyText(text){
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  ta.style.top = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+document.addEventListener('click', function(e){
+  // 高德地图：同窗口导航，触发 surl.amap.com Universal Link 唤起高德 App 或在浏览器打开。
+  // 关键：不带 target="_blank"——微信内置浏览器对 target=_blank 已升级拦截为"应用不支持在微信内打开"。
+  const amapEl = e.target.closest('a.poi.amap, a.alt.amap');
+  if (amapEl && amapEl.href) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = amapEl.href;
+    return;
+  }
+  const el = e.target.closest('.dp-copy');
+  if (!el) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const url  = el.dataset.url  || '';
+  const name = el.dataset.name || '';
+  // 同时复制店名 + 链接：粘贴到大众点评 App 内的对话框也能被识别，或直接搜店名
+  copyText(`${name}\n大众点评：${url}`).then(() => {
+    showToast(`已复制「${name}」\n请到「大众点评」App 内粘贴访问，或直接搜店名`);
+  }).catch(() => {
+    showToast('复制失败，请长按上方按钮选择复制');
+  });
+}, false);
+</script>
+</body>
+</html>
