@@ -244,6 +244,16 @@
   }
   .day-header .day-weather .wx { opacity: 0.95; }
   .day-header .day-weather .temp { font-weight: 600; }
+  .day-header .day-weather .temp .fx {
+    font-weight: 400;
+    font-size: 10px;
+    opacity: 0.55;
+    margin-left: 3px;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    padding: 0 4px;
+    line-height: 1.4;
+  }
   .day-header .day-weather.loading { opacity: 0.55; }
   .day.gray .day-header { background: var(--gray); }
   .day.orange .day-header { background: var(--orange); }
@@ -947,6 +957,11 @@ document.getElementById('dateNav').addEventListener('click', (e) => {
 // 数据源：Open-Meteo（api.open-meteo.com）
 // 数据来自各国国家气象局（含中国气象局 CMA / 美国 NWS / 德国 DWD 等），免 API key，CC-BY 许可
 // 官方许可：https://open-meteo.com/en/license
+//
+// 主数据：daily 预报（指定日期的 weathercode + 最高/最低温）。
+//   - 行程当天（从 9-24 起，每天首次打开页面时都还在 16 天预报窗内）→ 显示当天的预报
+//   - 行程前 16 天外的远期 → API 直接返回 400 out-of-range；自动回退到 current_weather 接口拿城市实况
+//   - chip 上用 "低~高°C" 表示预报、"N°C ·实时" 表示兜底，便于一眼区分
 const CITY_BY_DATE = {
   '2026-09-24':'shouxian','2026-09-25':'shouxian','2026-09-26':'shouxian',
   '2026-09-27':'shouxian','2026-09-28':'shouxian','2026-09-29':'shouxian',
@@ -993,38 +1008,79 @@ function renderWxChip(date, data){
   const el = document.querySelector(`.day-weather[data-wx="${date}"]`);
   if (!el) return;
   if (!data) {
-    el.innerHTML = '<span class="city">—</span><span class="wx">点击查看天气</span>';
+    el.innerHTML = '<span class="city">—</span><span class="wx">点击查看预报</span>';
     return;
   }
   el.classList.remove('loading');
-  const { city, label, icon, temp } = data;
-  el.innerHTML = `<span class="city">${city}</span><span class="wx">${icon||''} ${label}</span><span class="temp">${temp}°C</span>`;
+  const { city, label, icon, tempHi, tempLo, isForecast } = data;
+  // 预报：低~高°C；超 16 天兜底：单一值 + "实时" 小字
+  let tempText;
+  if (isForecast) {
+    tempText = (tempHi === tempLo) ? `${tempHi}°C` : `${tempLo}~${tempHi}°C`;
+  } else {
+    tempText = `${tempHi}°C<span class="fx">实时</span>`;
+  }
+  el.innerHTML = `<span class="city">${city}</span><span class="wx">${icon||''} ${label}</span><span class="temp" data-fc="${isForecast?'1':'0'}">${tempText}</span>`;
 }
 async function loadWeatherForDate(date){
   const city = CITY_BY_DATE[date];
   if (!city) return;
+
   // 1) 命中有效缓存（< 2h）直接用，不发请求
   const cached = readWxCache(date, city);
   if (cached) { renderWxChip(date, cached); return; }
-  // 2) 否则 fetch 实时天气
+
+  // 2) 否则 fetch；先尝试 daily 预报，失败（超 16 天）回退到 current_weather
   const el = document.querySelector(`.day-weather[data-wx="${date}"]`);
-  if (el) { el.classList.add('loading'); el.innerHTML = `<span class="city">${CITIES[city].name}</span><span class="wx">加载中…</span>`; }
+  if (el) { el.classList.add('loading'); el.innerHTML = `<span class="city">${CITIES[city].name}</span><span class="wx">预报获取中…</span>`; }
   const c = CITIES[city];
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current_weather=true&timezone=auto`;
+  const fcstUrl = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&current_weather=true&timezone=auto&start_date=${date}&end_date=${date}`;
+  const nowUrl  = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current_weather=true&timezone=auto`;
+
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error('http ' + r.status);
-    const j = await r.json();
-    const cw = j.current_weather || {};
-    const code = cw.weathercode ?? 0;
-    const [label, icon] = WX_CODE[code] || ['',''];
-    const data = {
-      city: c.name, label, icon,
-      temp: Math.round(cw.temperature ?? 0),
-      code,
-    };
-    writeWxCache(date, city, data);
-    renderWxChip(date, data);
+    let resolved = false;
+    const r = await fetch(fcstUrl);
+    if (r.ok) {
+      const j = await r.json();
+      const daily = j.daily || {};
+      const codeArr = daily.weathercode || [];
+      const tmaxArr = daily.temperature_2m_max || [];
+      const tminArr = daily.temperature_2m_min || [];
+      if (codeArr.length > 0 && codeArr[0] != null) {
+        // 16 天内 → 当天预报
+        const code = codeArr[0];
+        const [label, icon] = WX_CODE[code] || ['',''];
+        const data = {
+          city: c.name, label, icon,
+          tempHi: Math.round(tmaxArr[0] ?? 0),
+          tempLo: Math.round(tminArr[0] ?? 0),
+          isForecast: true,
+          code,
+        };
+        writeWxCache(date, city, data);
+        renderWxChip(date, data);
+        resolved = true;
+      }
+    }
+    if (!resolved) {
+      // 兜底：超 16 天（或网络异常被 r.ok=false 拦截）→ 城市当前实况
+      const r2 = await fetch(nowUrl);
+      if (!r2.ok) throw new Error('http ' + r2.status);
+      const j2 = await r2.json();
+      const cw = j2.current_weather || {};
+      if (cw.weathercode == null) throw new Error('no weathercode');
+      const code = cw.weathercode;
+      const [label, icon] = WX_CODE[code] || ['',''];
+      const t = Math.round(cw.temperature ?? 0);
+      const data = {
+        city: c.name, label, icon,
+        tempHi: t, tempLo: t,
+        isForecast: false,
+        code,
+      };
+      writeWxCache(date, city, data);
+      renderWxChip(date, data);
+    }
   } catch(e) {
     if (el) { el.classList.remove('loading'); el.innerHTML = `<span class="city">${c.name}</span><span class="wx">获取失败</span>`; }
   }
