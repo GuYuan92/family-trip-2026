@@ -231,6 +231,20 @@
     background: rgba(255,255,255,0.22);
     font-weight: 500;
   }
+  .day-header .day-weather {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .day-header .day-weather .wx { opacity: 0.95; }
+  .day-header .day-weather .temp { font-weight: 600; }
+  .day-header .day-weather.loading { opacity: 0.55; }
   .day.gray .day-header { background: var(--gray); }
   .day.orange .day-header { background: var(--orange); }
   .day.red .day-header { background: var(--red); }
@@ -694,6 +708,10 @@ function renderDays(){
           <div class="main">${d.short}</div>
           <div class="week">${d.week}</div>
           <div class="tag">${d.tag}</div>
+          <div class="day-weather" data-wx="${d.date}">
+            <span class="city">—</span>
+            <span class="wx">点击查看天气</span>
+          </div>
         </div>
         <div class="day-remind">记得检查带电话手表，记得遛狗 🐶</div>
         <div class="day-body">${itemsHtml}${altsHtml}</div>
@@ -879,6 +897,7 @@ window.addEventListener('scroll', () => {
 document.getElementById('fab').addEventListener('click', () => {
   const key = todayKey();
   scrollToDate(key);
+  loadWeatherForDate(key);
 });
 
 /* ===================== Init ===================== */
@@ -921,7 +940,95 @@ document.getElementById('dateNav').addEventListener('click', (e) => {
   expandAllWeeks();
   // 先改日历视图再滚动，这样 navOffset() 读到的是展开后的新高度
   scrollToDate(key);
+  loadWeatherForDate(key);
 });
+
+/* ===================== Weather ===================== */
+// 数据源：Open-Meteo（api.open-meteo.com）
+// 数据来自各国国家气象局（含中国气象局 CMA / 美国 NWS / 德国 DWD 等），免 API key，CC-BY 许可
+// 官方许可：https://open-meteo.com/en/license
+const CITY_BY_DATE = {
+  '2026-09-24':'shouxian','2026-09-25':'shouxian','2026-09-26':'shouxian',
+  '2026-09-27':'shouxian','2026-09-28':'shouxian','2026-09-29':'shouxian',
+  '2026-09-30':'shouxian',
+  '2026-10-01':'hefei','2026-10-02':'hefei',
+  '2026-10-03':'huangshan',
+  '2026-10-04':'hangzhou','2026-10-05':'hangzhou','2026-10-06':'hangzhou','2026-10-07':'hangzhou',
+};
+const CITIES = {
+  shouxian:  { name:'安徽寿县', lat:32.5766, lon:116.7911 },
+  hefei:     { name:'安徽合肥', lat:31.8206, lon:117.2272 },
+  huangshan: { name:'安徽黄山', lat:29.7116, lon:118.3173 },
+  hangzhou:  { name:'浙江杭州', lat:30.2741, lon:120.1551 },
+};
+// Open-Meteo WMO weathercode → (中文, emoji)
+const WX_CODE = {
+  0:['晴','☀️'], 1:['少云','🌤️'], 2:['多云','⛅'], 3:['阴','☁️'],
+  45:['雾','🌫️'], 48:['冻雾','🌫️'],
+  51:['毛毛雨','🌦️'], 53:['毛毛雨','🌦️'], 55:['强毛毛雨','🌦️'],
+  56:['冻毛毛雨','🌦️'], 57:['强冻毛毛雨','🌦️'],
+  61:['小雨','🌦️'], 63:['中雨','🌧️'], 65:['大雨','🌧️'],
+  66:['冻雨','🌧️'], 67:['强冻雨','🌧️'],
+  71:['小雪','🌨️'], 73:['中雪','❄️'], 75:['大雪','❄️'], 77:['米雪','🌨️'],
+  80:['阵雨','🌦️'], 81:['强阵雨','🌧️'], 82:['猛烈阵雨','⛈️'],
+  85:['阵雪','🌨️'], 86:['强阵雪','❄️'],
+  95:['雷暴','⛈️'], 96:['雷暴+冰雹','⛈️'], 99:['强雷暴+冰雹','⛈️'],
+};
+const WX_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 小时
+const wxCacheKey = (date, city) => `wx:${date}:${city}`;
+function readWxCache(date, city){
+  try {
+    const raw = localStorage.getItem(wxCacheKey(date, city));
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.ts || !obj.data) return null;
+    if (Date.now() - obj.ts > WX_CACHE_TTL) return null;
+    return obj.data;
+  } catch(e){ return null; }
+}
+function writeWxCache(date, city, data){
+  try { localStorage.setItem(wxCacheKey(date, city), JSON.stringify({ ts: Date.now(), data })); } catch(e){}
+}
+function renderWxChip(date, data){
+  const el = document.querySelector(`.day-weather[data-wx="${date}"]`);
+  if (!el) return;
+  if (!data) {
+    el.innerHTML = '<span class="city">—</span><span class="wx">点击查看天气</span>';
+    return;
+  }
+  el.classList.remove('loading');
+  const { city, label, icon, temp } = data;
+  el.innerHTML = `<span class="city">${city}</span><span class="wx">${icon||''} ${label}</span><span class="temp">${temp}°C</span>`;
+}
+async function loadWeatherForDate(date){
+  const city = CITY_BY_DATE[date];
+  if (!city) return;
+  // 1) 命中有效缓存（< 2h）直接用，不发请求
+  const cached = readWxCache(date, city);
+  if (cached) { renderWxChip(date, cached); return; }
+  // 2) 否则 fetch 实时天气
+  const el = document.querySelector(`.day-weather[data-wx="${date}"]`);
+  if (el) { el.classList.add('loading'); el.innerHTML = `<span class="city">${CITIES[city].name}</span><span class="wx">加载中…</span>`; }
+  const c = CITIES[city];
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current_weather=true&timezone=auto`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const j = await r.json();
+    const cw = j.current_weather || {};
+    const code = cw.weathercode ?? 0;
+    const [label, icon] = WX_CODE[code] || ['',''];
+    const data = {
+      city: c.name, label, icon,
+      temp: Math.round(cw.temperature ?? 0),
+      code,
+    };
+    writeWxCache(date, city, data);
+    renderWxChip(date, data);
+  } catch(e) {
+    if (el) { el.classList.remove('loading'); el.innerHTML = `<span class="city">${c.name}</span><span class="wx">获取失败</span>`; }
+  }
+}
 
 /* ===================== Dianping copy helper ===================== */
 // 大众点评 m 站 m.dianping.com 在微信内置浏览器里会被其登录层拦截（错误码 10005），
